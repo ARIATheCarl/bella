@@ -147,6 +147,13 @@ if st.button("產出報表"):
     ws.sheet_properties = WorksheetProperties(
         pageSetUpPr=PageSetupProperties(fitToPage=True)
     )
+    
+    # 設定列印邊距（單位：英吋）
+    ws.page_margins = PageMargins(
+        left=0.3, right=0.3,
+        top=0.5, bottom=0.5,
+        header=0.2, footer=0.2
+    )
     # ws.sheet_view.showGridLines = False  # ✅ 取消格線顯示
 
     # 提供下載

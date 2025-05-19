@@ -9,6 +9,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
 from datetime import datetime, timedelta, time
 from twstock.codes import codes
+from twstock import Stock
 
 st.title("蘇大哥股價報表產出工具（Excel）")
 

@@ -19,7 +19,6 @@ stock_options = [
     if hasattr(codes[code], "name") and codes[code].name and 4 <= len(code) <= 6
 ]
 
-default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0
 selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
 stock_id = selected.split()[0]
 
@@ -141,11 +140,12 @@ if st.button("產出報表"):
     ws.freeze_panes = "A3"
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
-    ws.page_setup.orientation = "landscape"
+    ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = 9
     ws.sheet_properties = WorksheetProperties(
         pageSetUpPr=PageSetupProperties(fitToPage=True)
     )
+    ws.sheet_view.showGridLines = False  # ✅ 取消格線顯示
 
     # 提供下載
     buffer = BytesIO()

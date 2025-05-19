@@ -8,10 +8,18 @@ from openpyxl.styles import Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
 from datetime import datetime, timedelta, time
+from twstock.codes import codes
 
 st.title("股價報表產出工具（Excel）")
 
-stock_id = st.text_input("輸入股票代碼（例如：00683L）", "00683L")
+# 建立股票代碼清單，例如 ['2330 台積電', '00683L 元大台灣50正2']
+stock_options = [f"{k} {v['name']}" for k, v in codes.items()]
+default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0
+
+selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
+
+# 從選項中擷取代碼（前面是代碼）
+stock_id = selected.split()[0]
 
 start_date = datetime.combine(
     st.date_input("起始日期", datetime.today() - timedelta(days=90)),
@@ -89,7 +97,7 @@ if st.button("產出報表"):
 
     ws.insert_rows(1)
     ws.insert_rows(2)
-    title = f"{stock_id} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（日）"
+    title = f"{selected} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（日）"
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=12)
     title_cell = ws.cell(row=1, column=1, value=title)
     title_cell.font = Font(bold=True, size=14)
@@ -139,4 +147,4 @@ if st.button("產出報表"):
     buffer = BytesIO()
     wb.save(buffer)
     st.success("✅ 報表產出成功")
-    st.download_button("下載 Excel", data=buffer.getvalue(), file_name=f"{stock_id}_報表.xlsx")
+    st.download_button("下載 Excel", data=buffer.getvalue(), file_name=f"{title}.xlsx")

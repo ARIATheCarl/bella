@@ -104,7 +104,7 @@ if st.button("產出報表"):
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=12)
     title_cell = ws.cell(row=1, column=1, value=title)
     title_cell.font = Font(bold=True, size=14)
-    title_cell.alignment = Alignment(horizontal="center")
+    title_cell.alignment = Alignment(horizontal="center", vertical="center")
     # ✅ 新增這一行：加高標題列的列高（單位：points）
     ws.row_dimensions[1].height = 30
 

@@ -116,6 +116,9 @@ if st.button("產出報表"):
         cell.alignment = Alignment(horizontal="center")
         # cell.border = thin
 
+    for r in range(3, ws.max_row + 1):
+        ws.row_dimensions[r].height = 20  # 或 22
+        
     starts = [1, 5, 9]
     for block, data in enumerate(chunks):
         col = starts[block]

@@ -10,13 +10,14 @@ from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperti
 from datetime import datetime, timedelta, time
 from twstock.codes import codes
 
-st.title("股價報表產出工具（Excel）")
+st.title("蘇大哥股價報表產出工具（Excel）")
 
-# 建立股票代碼清單，例如 ['2330 台積電', '00683L 元大台灣50正2']
-stock_options = [f"{k} {v['name']}" for k, v in codes.items()]
+stock_dict = Stock.codes  # 這才是正確的股票代碼與名稱字典
+stock_options = [f"{code} {name}" for code, name in stock_dict.items()]
 default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0
 
 selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
+stock_id = selected.split()[0]
 
 # 從選項中擷取代碼（前面是代碼）
 stock_id = selected.split()[0]

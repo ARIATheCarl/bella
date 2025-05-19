@@ -2,3 +2,4 @@ streamlit
 twstock
 pandas
 openpyxl
+lxml

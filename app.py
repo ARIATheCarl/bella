@@ -111,7 +111,7 @@ if st.button("產出報表"):
         cell = ws.cell(row=2, column=i + 1, value=h)
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal="center")
-        cell.border = thin
+        # cell.border = thin
 
     starts = [1, 5, 9]
     for block, data in enumerate(chunks):
@@ -128,8 +128,8 @@ if st.button("產出報表"):
             v = ws.cell(row=r, column=col+3, value=row["成交符"])
             v.font = Font(color=row["符色"])
             v.alignment = Alignment(horizontal="center")
-            for j in range(4):
-                ws.cell(row=r, column=col+j).border = thin
+            # for j in range(4):
+            #     ws.cell(row=r, column=col+j).border = thin
 
     for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
         col_letter = get_column_letter(col_cells[0].column)
@@ -145,7 +145,7 @@ if st.button("產出報表"):
     ws.sheet_properties = WorksheetProperties(
         pageSetUpPr=PageSetupProperties(fitToPage=True)
     )
-    ws.sheet_view.showGridLines = False  # ✅ 取消格線顯示
+    # ws.sheet_view.showGridLines = False  # ✅ 取消格線顯示
 
     # 提供下載
     buffer = BytesIO()

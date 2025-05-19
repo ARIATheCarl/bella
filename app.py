@@ -8,7 +8,7 @@ from openpyxl.styles import Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
 
-st.title("蘇大哥股價報表產出工具（Excel）")
+st.title("蘇大哥專用工具（Excel）")
 
 # ✅ 使用 twstock.codes，代碼 ➜ 中文名稱
 from twstock import codes

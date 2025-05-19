@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import twstock
-import requests
 from datetime import datetime, timedelta, time
 from io import BytesIO
 from openpyxl import Workbook
@@ -11,25 +10,14 @@ from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperti
 
 st.title("蘇大哥股價報表產出工具（Excel）")
 
-# ✅ 取得股票代碼與公司名稱（來源：台灣證交所）
-@st.cache_data
-def get_twse_stock_list():
-    url = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=2"
-    df = pd.read_html(url)[0]
-    df.columns = df.iloc[0]
-    df = df.iloc[1:]
-    df = df[["有價證券代號及名稱"]]
-    df = df[~df["有價證券代號及名稱"].str.contains("　")]  # 排除空白
-    df["code"] = df["有價證券代號及名稱"].str.split("　").str[0]
-    df["name"] = df["有價證券代號及名稱"].str.split("　").str[1]
-    df = df[df["code"].str.len() <= 6]  # 排除權證/債券等過長代碼
-    return df.reset_index(drop=True)
+# ✅ 使用 twstock.codes，代碼 ➜ 中文名稱
+from twstock import codes
 
-stock_df = get_twse_stock_list()
-stock_options = [f"{row.code} {row.name}" for _, row in stock_df.iterrows()]
+stock_options = [f"{code} {name}" for code, name in codes.items()]
 default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0
 selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
 stock_id = selected.split()[0]
+
 
 # 📅 日期選擇
 start_date = datetime.combine(

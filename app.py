@@ -137,7 +137,7 @@ if st.button("產出報表"):
         ws.column_dimensions[col_letter].width = max(6, min(max_len + 2, 16))
 
     # 列印設定
-    ws.freeze_panes = "A3"
+    ws.freeze_panes = "A4"
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
     ws.page_setup.orientation = "portrait"

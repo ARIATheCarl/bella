@@ -1,25 +1,37 @@
 import streamlit as st
 import pandas as pd
 import twstock
-from datetime import datetime, timedelta
+import requests
+from datetime import datetime, timedelta, time
 from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
-from datetime import datetime, timedelta, time
-from twstock import codes
 
 st.title("蘇大哥股價報表產出工具（Excel）")
 
-# 建立股票選項清單：['2330 台積電', '00683L 元大台灣50正2', ...]
-stock_options = [f"{code} {name}" for code, name in codes.items()]
+# ✅ 取得股票代碼與公司名稱（來源：台灣證交所）
+@st.cache_data
+def get_twse_stock_list():
+    url = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=2"
+    df = pd.read_html(url)[0]
+    df.columns = df.iloc[0]
+    df = df.iloc[1:]
+    df = df[["有價證券代號及名稱"]]
+    df = df[~df["有價證券代號及名稱"].str.contains("　")]  # 排除空白
+    df["code"] = df["有價證券代號及名稱"].str.split("　").str[0]
+    df["name"] = df["有價證券代號及名稱"].str.split("　").str[1]
+    df = df[df["code"].str.len() <= 6]  # 排除權證/債券等過長代碼
+    return df.reset_index(drop=True)
+
+stock_df = get_twse_stock_list()
+stock_options = [f"{row.code} {row.name}" for _, row in stock_df.iterrows()]
 default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0
-
-# 下拉選單（可搜尋）
 selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
-stock_id = selected.split()[0]  # 取得代碼（例如 00683L）  # ✅ 真正用於查資料的股票代碼
+stock_id = selected.split()[0]
 
+# 📅 日期選擇
 start_date = datetime.combine(
     st.date_input("起始日期", datetime.today() - timedelta(days=90)),
     time.min
@@ -28,7 +40,6 @@ end_date = datetime.combine(
     st.date_input("結束日期", datetime.today()),
     time.max
 )
-
 
 if start_date >= end_date:
     st.warning("⚠️ 結束日期必須晚於起始日期")
@@ -50,7 +61,7 @@ if st.button("產出報表"):
         '成交量': d.capacity
     } for d in filtered])
 
-    # 補一筆資料做比對
+    # 補一筆資料作為比對用
     extra_date = start_date - timedelta(days=5)
     extra_data = stock.fetch_from(extra_date.year, extra_date.month)
     extra_point = next((d for d in reversed(extra_data) if d.date < start_date), None)
@@ -62,7 +73,7 @@ if st.button("產出報表"):
             '成交量': extra_point.capacity
         }]), df], ignore_index=True)
 
-    # 紅藍邏輯
+    # 加入紅藍標記與成交符
     df["高色"], df["低色"], df["成交符"], df["符色"] = "", "", "", ""
     for i in range(len(df)):
         if i == 0:
@@ -77,7 +88,7 @@ if st.button("產出報表"):
 
     df = df.iloc[1:].reset_index(drop=True)
 
-    # 分區塊
+    # 分成三區塊
     base = len(df) // 3
     remainder = len(df) % 3
     sizes = [base + (1 if i < remainder else 0) for i in range(3)]
@@ -87,7 +98,7 @@ if st.button("產出報表"):
         chunks.append(df.iloc[s:s+size].reset_index(drop=True))
         s += size
 
-    # 建立 Excel
+    # 產出 Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "股價報表"
@@ -142,7 +153,7 @@ if st.button("產出報表"):
         pageSetUpPr=PageSetupProperties(fitToPage=True)
     )
 
-    # 下載按鈕
+    # 提供下載
     buffer = BytesIO()
     wb.save(buffer)
     st.success("✅ 報表產出成功")

@@ -13,10 +13,16 @@ st.title("蘇大哥股價報表產出工具（Excel）")
 # ✅ 使用 twstock.codes，代碼 ➜ 中文名稱
 from twstock import codes
 
-stock_options = [f"{code} {codes[code]}" for code in sorted(codes.keys()) if codes[code]]
+stock_options = [
+    f"{code} {str(codes[code])}"
+    for code in sorted(codes.keys())
+    if codes[code] and 4 <= len(code) <= 6
+]
+
 default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0
 selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
 stock_id = selected.split()[0]
+
 
 
 # 📅 日期選擇

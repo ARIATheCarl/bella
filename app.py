@@ -13,11 +13,11 @@ from twstock import codes
 st.title("蘇大哥股價報表產出工具（Excel）")
 
 # 建立股票選項 ['2330 台積電', '00683L 元大台灣50正2', ...]
-stock_options = [f"{code} {info['name']}" for code, info in codes.items()]
+stock_options = [f"{code} {name}" for code, name in codes.items()]
 default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0
 
 selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
-stock_id = selected.split()[0]  # ✅ 真正用於查資料的股票代碼
+stock_id = selected.split()[0]  # 取得代碼（例如 00683L）  # ✅ 真正用於查資料的股票代碼
 
 start_date = datetime.combine(
     st.date_input("起始日期", datetime.today() - timedelta(days=90)),

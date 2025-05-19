@@ -148,6 +148,9 @@ if st.button("產出報表"):
     ws.sheet_properties = WorksheetProperties(
         pageSetUpPr=PageSetupProperties(fitToPage=True)
     )
+    ws.page_setup.horizontalCentered = True
+    ws.page_setup.verticalCentered = True
+
     
     # 設定列印邊距（單位：英吋）
     ws.page_margins = PageMargins(

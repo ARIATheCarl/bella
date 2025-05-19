@@ -7,12 +7,21 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
+from datetime import datetime, timedelta, time
 
 st.title("股價報表產出工具（Excel）")
 
 stock_id = st.text_input("輸入股票代碼（例如：00683L）", "00683L")
-start_date = st.date_input("起始日期", datetime.today() - timedelta(days=90))
-end_date = st.date_input("結束日期", datetime.today())
+
+start_date = datetime.combine(
+    st.date_input("起始日期", datetime.today() - timedelta(days=90)),
+    time.min
+)
+end_date = datetime.combine(
+    st.date_input("結束日期", datetime.today()),
+    time.max
+)
+
 
 if start_date >= end_date:
     st.warning("⚠️ 結束日期必須晚於起始日期")

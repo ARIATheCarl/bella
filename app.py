@@ -14,9 +14,9 @@ st.title("蘇大哥專用工具（Excel）")
 from twstock import codes
 
 stock_options = [
-    f"{code} {str(codes[code])}"
+    f"{code} {codes[code].name}"
     for code in sorted(codes.keys())
-    if codes[code] and 4 <= len(code) <= 6
+    if hasattr(codes[code], "name") and codes[code].name and 4 <= len(code) <= 6
 ]
 
 default_index = stock_options.index("00683L 元大台灣50正2") if "00683L 元大台灣50正2" in stock_options else 0

@@ -105,6 +105,8 @@ if st.button("產出報表"):
     title_cell = ws.cell(row=1, column=1, value=title)
     title_cell.font = Font(bold=True, size=14)
     title_cell.alignment = Alignment(horizontal="center")
+    # ✅ 新增這一行：加高標題列的列高（單位：points）
+    ws.row_dimensions[1].height = 30
 
     headers = ["日期", "最高價", "最低價", ""] * 3
     for i, h in enumerate(headers):

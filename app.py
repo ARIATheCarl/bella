@@ -141,8 +141,9 @@ if st.button("產出報表"):
 
     # 列印設定
     ws.freeze_panes = "A4"
-    ws.page_setup.fitToWidth = 1
-    ws.page_setup.fitToHeight = 0
+    ws.page_setup.fitToWidth = 1       # ✅ 一頁寬
+    ws.page_setup.fitToHeight = 1      # ✅ 一頁高（整頁自動縮放）
+    ws.page_setup.scale = None         # ✅ 取消預設縮放比例，才會生效 fitToWidth/Height
     ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = 9
     ws.sheet_properties = WorksheetProperties(

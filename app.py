@@ -19,7 +19,7 @@ stock_options = [
     if hasattr(codes[code], "name") and codes[code].name and 4 <= len(code) <= 6
 ]
 
-selected = st.selectbox("選擇股票代碼", stock_options, index=default_index)
+selected = st.selectbox("選擇股票代碼", stock_options)
 stock_id = selected.split()[0]
 
 

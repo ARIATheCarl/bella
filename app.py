@@ -23,17 +23,18 @@ stock_options = [
 selected = st.selectbox("選擇股票代碼", stock_options)
 stock_id = selected.split()[0]
 
+min_day = datetime(1990, 1, 1)
+max_day = datetime(2035, 12, 31)
 
-
-# 📅 日期選擇
 start_date = datetime.combine(
-    st.date_input("起始日期", datetime.today() - timedelta(days=90)),
+    st.date_input("起始日期", datetime.today() - timedelta(days=90), min_value=min_day, max_value=max_day),
     time.min
 )
 end_date = datetime.combine(
-    st.date_input("結束日期", datetime.today()),
+    st.date_input("結束日期", datetime.today(), min_value=min_day, max_value=max_day),
     time.max
 )
+
 
 if start_date >= end_date:
     st.warning("⚠️ 結束日期必須晚於起始日期")

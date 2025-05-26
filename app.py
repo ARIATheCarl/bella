@@ -140,13 +140,15 @@ if st.button("產出報表"):
             v.font = Font(color=row["符色"])
             v.alignment = Alignment(horizontal="center")
             # 每週結尾加底線
-            is_last = (i == len(data) - 1)
-            next_week = None
             current_week = full_date.isocalendar()[1]
-            if not is_last:
+            next_week = current_week
+            # 只要不是區塊最後一筆，就取下一筆的 week
+            if i < len(data) - 1:
                 next_date = datetime.strptime(data.iloc[i + 1]["日期"], "%Y-%m-%d")
                 next_week = next_date.isocalendar()[1]
-            if is_last or next_week != current_week:
+            
+            # 只有週有變才加底線（就算是區塊結束，也不自動加底線）
+            if next_week != current_week:
                 for offset in range(6):
                     ws.cell(row=row_index, column=col + offset).border = bottom_border
             row_index += 1

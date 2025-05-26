@@ -157,7 +157,7 @@ if st.button("產出報表"):
         max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)
         ws.column_dimensions[col_letter].width = max(6, min(max_len + 2, 16))
 
-    ws.freeze_panes = "A4"
+    ws.freeze_panes = "A3"
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 1
     ws.page_setup.scale = None

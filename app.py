@@ -115,7 +115,7 @@ if st.button("產出報表"):
     ws.row_dimensions[1].height = 30
 
     # 設定標題列
-    headers = ["日", "週", "高", "低", "差", ""] * 3
+    headers = ["日", "週", "高", "低", "漲幅", "量"] * 3
     for i, h in enumerate(headers):
         cell = ws.cell(row=2, column=i + 1, value=h)
         cell.font = Font(bold=True)
@@ -125,9 +125,16 @@ if st.button("產出報表"):
     for block, data in enumerate(chunks):
         col = starts[block]
         row_index = 3
+        prev_month = None
         for i, row in data.iterrows():
             full_date = datetime.strptime(row["日期"], "%Y-%m-%d")
-            day_str = full_date.strftime("%-d")
+            current_month = full_date.month
+            if i == 0 or current_month != prev_month:
+                day_str = f"{full_date.month}/{full_date.day}"
+            else:
+                day_str = str(full_date.day)
+            prev_month = current_month
+        
             weekday_str = ["一", "二", "三", "四", "五", "六", "日"][full_date.weekday()]
             ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
             ws.cell(row=row_index, column=col+1, value=weekday_str).alignment = Alignment(horizontal="center")

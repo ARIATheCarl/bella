@@ -101,7 +101,7 @@ if st.button("產出報表"):
     ws.insert_rows(1)
     ws.insert_rows(2)
     title = f"{selected} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（日）"
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=15)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=18)
     title_cell = ws.cell(row=1, column=1, value=title)
     title_cell.font = Font(bold=True, size=14)
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -116,7 +116,7 @@ if st.button("產出報表"):
     starts = [1, 7, 13]
     for block, data in enumerate(chunks):
         col = starts[block]
-        row_index = 3
+        row_index = 4
         for i, row in data.iterrows():
             full_date = datetime.strptime(row["日期"], "%Y-%m-%d")
             day_str = full_date.strftime("%-d")

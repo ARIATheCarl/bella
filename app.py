@@ -121,7 +121,7 @@ if st.button("產出報表"):
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal="center")
 
-    starts = [1, 8, 15]
+    starts = [1, 7, 13]
     for block, data in enumerate(chunks):
         col = starts[block]
         row_index = 3

@@ -125,7 +125,16 @@ if st.button("產出報表"):
         col = starts[block]
         for i, row in data.iterrows():
             r = i + 3
-            ws.cell(row=r, column=col, value=row["日期"]).alignment = Alignment(horizontal="center")
+            # 將日期轉回 datetime 格式再處理
+            full_date = datetime.strptime(row["日期"], "%Y-%m-%d")
+            day_str = full_date.strftime("%-d")  # Linux / macOS
+            # day_str = full_date.strftime("%#d")  # Windows 用這行（自動去掉前導零）
+            weekday_str = ["一", "二", "三", "四", "五", "六", "日"][full_date.weekday()]
+            date_display = f"{day_str}（{weekday_str}）"
+            
+            ws.cell(row=r, column=col, value=date_display).alignment = Alignment(horizontal="center")
+
+
             h = ws.cell(row=r, column=col+1, value=row["最高價"])
             h.font = Font(color=row["高色"])
             h.alignment = Alignment(horizontal="center")

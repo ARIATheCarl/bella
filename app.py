@@ -11,7 +11,6 @@ from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperti
 
 st.title("蘇大哥專用工具（Excel）")
 
-# ✅ 使用 twstock.codes，代碼 ➜ 中文名稱
 from twstock import codes
 
 stock_options = [
@@ -23,7 +22,7 @@ stock_options = [
 selected = st.selectbox("選擇股票代碼", stock_options)
 stock_id = selected.split()[0]
 
-min_day = datetime(1990, 1, 1)
+min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)
 
 start_date = datetime.combine(
@@ -34,7 +33,6 @@ end_date = datetime.combine(
     st.date_input("結束日期", datetime.today(), min_value=min_day, max_value=max_day),
     time.max
 )
-
 
 if start_date >= end_date:
     st.warning("⚠️ 結束日期必須晚於起始日期")
@@ -56,7 +54,6 @@ if st.button("產出報表"):
         '成交量': d.capacity
     } for d in filtered])
 
-    # 補一筆資料作為比對用
     extra_date = start_date - timedelta(days=5)
     extra_data = stock.fetch_from(extra_date.year, extra_date.month)
     extra_point = next((d for d in reversed(extra_data) if d.date < start_date), None)
@@ -68,7 +65,6 @@ if st.button("產出報表"):
             '成交量': extra_point.capacity
         }]), df], ignore_index=True)
 
-    # 加入紅藍標記與成交符
     df["高色"], df["低色"], df["成交符"], df["符色"] = "", "", "", ""
     for i in range(len(df)):
         if i == 0:
@@ -83,7 +79,6 @@ if st.button("產出報表"):
 
     df = df.iloc[1:].reset_index(drop=True)
 
-    # 分成三區塊
     base = len(df) // 3
     remainder = len(df) % 3
     sizes = [base + (1 if i < remainder else 0) for i in range(3)]
@@ -93,21 +88,23 @@ if st.button("產出報表"):
         chunks.append(df.iloc[s:s+size].reset_index(drop=True))
         s += size
 
-    # 產出 Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "股價報表"
-    thin = Border(left=Side(style='thin'), right=Side(style='thin'),
-                  top=Side(style='thin'), bottom=Side(style='thin'))
+
+    thin_border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+    bottom_border = Border(bottom=Side(style="medium"))
 
     ws.insert_rows(1)
     ws.insert_rows(2)
     title = f"{selected} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（日）"
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=12)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=15)
     title_cell = ws.cell(row=1, column=1, value=title)
     title_cell.font = Font(bold=True, size=14)
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
-    # ✅ 新增這一行：加高標題列的列高（單位：points）
     ws.row_dimensions[1].height = 30
 
     headers = ["日期", "最高價", "最低價", "", ""] * 3
@@ -115,51 +112,57 @@ if st.button("產出報表"):
         cell = ws.cell(row=2, column=i + 1, value=h)
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal="center")
-        # cell.border = thin
 
-    for r in range(3, ws.max_row + 1):
-        ws.row_dimensions[r].height = 20  # 或 22
-        
-    starts = [1, 6, 10]
+    starts = [1, 6, 11]
     for block, data in enumerate(chunks):
         col = starts[block]
+        row_index = 3
+        prev_week = None
+
         for i, row in data.iterrows():
-            r = i + 3
-            # 將日期轉回 datetime 格式再處理
             full_date = datetime.strptime(row["日期"], "%Y-%m-%d")
-            day_str = full_date.strftime("%-d")  # Linux / macOS
-            # day_str = full_date.strftime("%#d")  # Windows 用這行（自動去掉前導零）
+            current_week = full_date.isocalendar()[1]
+
+            day_str = full_date.strftime("%-d")
             weekday_str = ["一", "二", "三", "四", "五", "六", "日"][full_date.weekday()]
             date_display = f"{day_str}（{weekday_str}）"
-            
-            ws.cell(row=r, column=col, value=date_display).alignment = Alignment(horizontal="center")
+            ws.cell(row=row_index, column=col, value=date_display).alignment = Alignment(horizontal="center")
 
-
-            h = ws.cell(row=r, column=col+1, value=row["最高價"])
+            h = ws.cell(row=row_index, column=col+1, value=row["最高價"])
             h.font = Font(color=row["高色"])
             h.alignment = Alignment(horizontal="center")
-            l = ws.cell(row=r, column=col+2, value=row["最低價"])
+
+            l = ws.cell(row=row_index, column=col+2, value=row["最低價"])
             l.font = Font(color=row["低色"])
             l.alignment = Alignment(horizontal="center")
-            diff = row["最高價"] - row["最低價"]
-            d = ws.cell(row=r, column=col+3, value=round(diff, 2))
+
+            d = ws.cell(row=row_index, column=col+3, value=round(row["最高價"] - row["最低價"], 2))
             d.alignment = Alignment(horizontal="center")
-            v = ws.cell(row=r, column=col+4, value=row["成交符"])
+
+            v = ws.cell(row=row_index, column=col+4, value=row["成交符"])
             v.font = Font(color=row["符色"])
             v.alignment = Alignment(horizontal="center")
-            # for j in range(4):
-            #     ws.cell(row=r, column=col+j).border = thin
+
+            is_last = (i == len(data) - 1)
+            next_week = None
+            if not is_last:
+                next_date = datetime.strptime(data.iloc[i + 1]["日期"], "%Y-%m-%d")
+                next_week = next_date.isocalendar()[1]
+            if is_last or next_week != current_week:
+                for offset in range(5):
+                    ws.cell(row=row_index, column=col + offset).border = bottom_border
+
+            row_index += 1
 
     for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
         col_letter = get_column_letter(col_cells[0].column)
         max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)
         ws.column_dimensions[col_letter].width = max(6, min(max_len + 2, 16))
 
-    # 列印設定
     ws.freeze_panes = "A4"
-    ws.page_setup.fitToWidth = 1       # ✅ 一頁寬
-    ws.page_setup.fitToHeight = 1      # ✅ 一頁高（整頁自動縮放）
-    ws.page_setup.scale = None         # ✅ 取消預設縮放比例，才會生效 fitToWidth/Height
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 1
+    ws.page_setup.scale = None
     ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = 9
     ws.sheet_properties = WorksheetProperties(
@@ -167,17 +170,12 @@ if st.button("產出報表"):
     )
     ws.page_setup.horizontalCentered = True
     ws.page_setup.verticalCentered = True
-
-    
-    # 設定列印邊距（單位：英吋）
     ws.page_margins = PageMargins(
         left=0.3, right=0.3,
         top=0.5, bottom=0.5,
         header=0.2, footer=0.2
     )
-    # ws.sheet_view.showGridLines = False  # ✅ 取消格線顯示
 
-    # 提供下載
     buffer = BytesIO()
     wb.save(buffer)
     st.success("✅ 報表產出成功")

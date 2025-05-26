@@ -54,6 +54,7 @@ if st.button("產出報表"):
         '成交量': d.capacity
     } for d in filtered])
 
+    # 補一筆資料作為比對用
     extra_date = start_date - timedelta(days=5)
     extra_data = stock.fetch_from(extra_date.year, extra_date.month)
     extra_point = next((d for d in reversed(extra_data) if d.date < start_date), None)
@@ -65,6 +66,7 @@ if st.button("產出報表"):
             '成交量': extra_point.capacity
         }]), df], ignore_index=True)
 
+    # 計算欄位
     df["高色"], df["低色"], df["成交符"], df["符色"] = "", "", "", ""
     for i in range(len(df)):
         if i == 0:
@@ -79,6 +81,7 @@ if st.button("產出報表"):
 
     df = df.iloc[1:].reset_index(drop=True)
 
+    # 分成三區塊
     base = len(df) // 3
     remainder = len(df) % 3
     sizes = [base + (1 if i < remainder else 0) for i in range(3)]
@@ -98,25 +101,27 @@ if st.button("產出報表"):
     )
     bottom_border = Border(bottom=Side(style="thin"))
 
+    # 插入標題兩列
     ws.insert_rows(1)
     ws.insert_rows(2)
     title = f"{selected} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（日）"
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=18)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=18)  # 固定到第18欄
     title_cell = ws.cell(row=1, column=1, value=title)
     title_cell.font = Font(bold=True, size=14)
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[1].height = 30
 
+    # 設定標題列
     headers = ["日期", "星期", "最高價", "最低價", "", ""] * 3
     for i, h in enumerate(headers):
         cell = ws.cell(row=2, column=i + 1, value=h)
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal="center")
-    
+
     starts = [1, 7, 13]
     for block, data in enumerate(chunks):
         col = starts[block]
-        row_index = 4
+        row_index = 3
         for i, row in data.iterrows():
             full_date = datetime.strptime(row["日期"], "%Y-%m-%d")
             day_str = full_date.strftime("%-d")
@@ -146,6 +151,7 @@ if st.button("產出報表"):
                     ws.cell(row=row_index, column=col + offset).border = bottom_border
             row_index += 1
 
+    # 欄寬自動
     for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
         col_letter = get_column_letter(col_cells[0].column)
         max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)

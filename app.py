@@ -110,7 +110,7 @@ if st.button("產出報表"):
     # ✅ 新增這一行：加高標題列的列高（單位：points）
     ws.row_dimensions[1].height = 30
 
-    headers = ["日期", "最高價", "最低價", ""] * 3
+    headers = ["日期", "最高價", "最低價", "", ""] * 3
     for i, h in enumerate(headers):
         cell = ws.cell(row=2, column=i + 1, value=h)
         cell.font = Font(bold=True)
@@ -132,7 +132,10 @@ if st.button("產出報表"):
             l = ws.cell(row=r, column=col+2, value=row["最低價"])
             l.font = Font(color=row["低色"])
             l.alignment = Alignment(horizontal="center")
-            v = ws.cell(row=r, column=col+3, value=row["成交符"])
+            diff = row["最高價"] - row["最低價"]
+            d = ws.cell(row=r, column=col+3, value=round(diff, 2))
+            d.alignment = Alignment(horizontal="center")
+            v = ws.cell(row=r, column=col+4, value=row["成交符"])
             v.font = Font(color=row["符色"])
             v.alignment = Alignment(horizontal="center")
             # for j in range(4):

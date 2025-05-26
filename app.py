@@ -67,17 +67,20 @@ if st.button("產出報表"):
         }]), df], ignore_index=True)
 
     # 計算欄位
-    df["高色"], df["低色"], df["成交符"], df["符色"] = "", "", "", ""
+    df["差色"] = ""
     for i in range(len(df)):
         if i == 0:
-            df.loc[i, ["成交符", "符色"]] = "-", "000000"
+            df.loc[i, ["成交符", "符色", "差色"]] = "-", "000000", "000000"
         else:
             prev = df.iloc[i - 1]
             now = df.iloc[i]
+            diff = now["最高價"] - now["最低價"]
+            prev_diff = prev["最高價"] - prev["最低價"]
             df.loc[i, "高色"] = "FF0000" if now["最高價"] >= prev["最高價"] else "0000FF"
             df.loc[i, "低色"] = "FF0000" if now["最低價"] >= prev["最低價"] else "0000FF"
             df.loc[i, "成交符"] = "🔴" if now["成交量"] >= prev["成交量"] else "🔵"
             df.loc[i, "符色"] = "FF0000" if df.loc[i, "成交符"] == "🔴" else "0000FF"
+            df.loc[i, "差色"] = "FF0000" if diff >= prev_diff else "0000FF"
 
     df = df.iloc[1:].reset_index(drop=True)
 

@@ -120,7 +120,7 @@ if st.button("產出報表"):
     for r in range(3, ws.max_row + 1):
         ws.row_dimensions[r].height = 20  # 或 22
         
-    starts = [1, 5, 9]
+    starts = [1, 6, 10]
     for block, data in enumerate(chunks):
         col = starts[block]
         for i, row in data.iterrows():

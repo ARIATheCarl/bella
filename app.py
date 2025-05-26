@@ -108,7 +108,7 @@ if st.button("產出報表"):
     ws.insert_rows(1)
     ws.insert_rows(2)
     title = f"{selected} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（日）"
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=18)  # 固定到第18欄
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=20)  # 固定到第18欄
     title_cell = ws.cell(row=1, column=1, value=title)
     title_cell.font = Font(bold=True, size=14)
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -121,7 +121,7 @@ if st.button("產出報表"):
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal="center")
 
-    starts = [1, 7, 13]
+    starts = [1, 8, 15]
     for block, data in enumerate(chunks):
         col = starts[block]
         row_index = 3
@@ -162,7 +162,7 @@ if st.button("產出報表"):
     for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
         col_letter = get_column_letter(col_cells[0].column)
         max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)
-        ws.column_dimensions[col_letter].width = max(3, min(max_len + 2, 16))
+        ws.column_dimensions[col_letter].width = max(2, min(max_len + 2, 16))
 
     ws.freeze_panes = "A3"
     ws.page_setup.fitToWidth = 1

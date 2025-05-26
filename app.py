@@ -96,7 +96,7 @@ if st.button("產出報表"):
         left=Side(style='thin'), right=Side(style='thin'),
         top=Side(style='thin'), bottom=Side(style='thin')
     )
-    bottom_border = Border(bottom=Side(style="medium"))
+    bottom_border = Border(bottom=Side(style="thin"))
 
     ws.insert_rows(1)
     ws.insert_rows(2)
@@ -107,52 +107,44 @@ if st.button("產出報表"):
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[1].height = 30
 
-    headers = ["日期", "最高價", "最低價", "", ""] * 3
-    for i, h in enumerate(headers):
-        cell = ws.cell(row=2, column=i + 1, value=h)
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
+headers = ["日期", "星期", "最高價", "最低價", "", ""] * 3
+for i, h in enumerate(headers):
+    cell = ws.cell(row=2, column=i + 1, value=h)
+    cell.font = Font(bold=True)
+    cell.alignment = Alignment(horizontal="center")
 
-    starts = [1, 6, 11]
-    for block, data in enumerate(chunks):
-        col = starts[block]
-        row_index = 3
-        prev_week = None
-
-        for i, row in data.iterrows():
-            full_date = datetime.strptime(row["日期"], "%Y-%m-%d")
-            current_week = full_date.isocalendar()[1]
-
-            day_str = full_date.strftime("%-d")
-            weekday_str = ["一", "二", "三", "四", "五", "六", "日"][full_date.weekday()]
-            date_display = f"{day_str}（{weekday_str}）"
-            ws.cell(row=row_index, column=col, value=date_display).alignment = Alignment(horizontal="center")
-
-            h = ws.cell(row=row_index, column=col+1, value=row["最高價"])
-            h.font = Font(color=row["高色"])
-            h.alignment = Alignment(horizontal="center")
-
-            l = ws.cell(row=row_index, column=col+2, value=row["最低價"])
-            l.font = Font(color=row["低色"])
-            l.alignment = Alignment(horizontal="center")
-
-            d = ws.cell(row=row_index, column=col+3, value=round(row["最高價"] - row["最低價"], 2))
-            d.alignment = Alignment(horizontal="center")
-
-            v = ws.cell(row=row_index, column=col+4, value=row["成交符"])
-            v.font = Font(color=row["符色"])
-            v.alignment = Alignment(horizontal="center")
-
-            is_last = (i == len(data) - 1)
-            next_week = None
-            if not is_last:
-                next_date = datetime.strptime(data.iloc[i + 1]["日期"], "%Y-%m-%d")
-                next_week = next_date.isocalendar()[1]
-            if is_last or next_week != current_week:
-                for offset in range(5):
-                    ws.cell(row=row_index, column=col + offset).border = bottom_border
-
-            row_index += 1
+starts = [1, 7, 13]
+for block, data in enumerate(chunks):
+    col = starts[block]
+    row_index = 3
+    for i, row in data.iterrows():
+        full_date = datetime.strptime(row["日期"], "%Y-%m-%d")
+        day_str = full_date.strftime("%-d")
+        weekday_str = ["一", "二", "三", "四", "五", "六", "日"][full_date.weekday()]
+        ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
+        ws.cell(row=row_index, column=col+1, value=weekday_str).alignment = Alignment(horizontal="center")
+        h = ws.cell(row=row_index, column=col+2, value=row["最高價"])
+        h.font = Font(color=row["高色"])
+        h.alignment = Alignment(horizontal="center")
+        l = ws.cell(row=row_index, column=col+3, value=row["最低價"])
+        l.font = Font(color=row["低色"])
+        l.alignment = Alignment(horizontal="center")
+        d = ws.cell(row=row_index, column=col+4, value=round(row["最高價"] - row["最低價"], 2))
+        d.alignment = Alignment(horizontal="center")
+        v = ws.cell(row=row_index, column=col+5, value=row["成交符"])
+        v.font = Font(color=row["符色"])
+        v.alignment = Alignment(horizontal="center")
+        # 每週結尾加底線
+        is_last = (i == len(data) - 1)
+        next_week = None
+        current_week = full_date.isocalendar()[1]
+        if not is_last:
+            next_date = datetime.strptime(data.iloc[i + 1]["日期"], "%Y-%m-%d")
+            next_week = next_date.isocalendar()[1]
+        if is_last or next_week != current_week:
+            for offset in range(6):
+                ws.cell(row=row_index, column=col + offset).border = bottom_border
+        row_index += 1
 
     for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
         col_letter = get_column_letter(col_cells[0].column)

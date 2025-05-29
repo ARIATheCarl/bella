@@ -1,58 +1,100 @@
 import streamlit as st
 import pandas as pd
 import twstock
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
+import math
+import calendar
 
-st.title("蘇大哥專用工具（Excel）")
+st.set_page_config(page_title="股價報表產生器", layout="centered")
 
+# ===== 股票選單 =====
 from twstock import codes
-
 stock_options = [
     f"{code} {codes[code].name}"
     for code in sorted(codes.keys())
     if hasattr(codes[code], "name") and codes[code].name and 4 <= len(code) <= 6
 ]
 
+st.title("台股區間報表產生器")
+
 selected = st.selectbox("選擇股票代碼", stock_options)
 stock_id = selected.split()[0]
-
+stock_name = selected.split()[1]
 interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
 
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)
 
-start_date = datetime.combine(
-    st.date_input("起始日期", datetime.today() - timedelta(days=90), min_value=min_day, max_value=max_day),
-    time.min
-)
-end_date = datetime.combine(
-    st.date_input("結束日期", datetime.today(), min_value=min_day, max_value=max_day),
-    time.max
-)
+col1, col2 = st.columns(2)
+with col1:
+    start_date = st.date_input("開始日期", value=datetime(2024, 1, 1), min_value=min_day, max_value=max_day)
+with col2:
+    end_date = st.date_input("結束日期", value=datetime.today(), min_value=min_day, max_value=max_day)
 
-if start_date >= end_date:
-    st.warning("⚠️ 結束日期必須晚於起始日期")
-    st.stop()
+# 按下按鈕才執行
+if st.button("產生報表"):
+    start_date = datetime.combine(start_date, datetime.min.time())
+    end_date = datetime.combine(end_date, datetime.min.time())
 
-def weekday_str(dt):
-    return ["一", "二", "三", "四", "五", "六", "日"][dt.weekday()]
-
-def week_of_month(dt):
-    # 計算當月第幾週
-    first_day = dt.replace(day=1)
-    dom = dt.day
-    adjusted_dom = dom + first_day.weekday()
-    return int((adjusted_dom - 1) / 7 + 1)
-
-if st.button("產出報表"):
     stock = twstock.Stock(stock_id)
-    # 先抓出所有區間的原始資料
+    today = datetime.today()
+    # 區間對齊
+    if interval == "週":
+        start_date = start_date - timedelta(days=start_date.weekday())
+        end_date = end_date + timedelta(days=6 - end_date.weekday())
+    elif interval == "月":
+        start_date = start_date.replace(day=1)
+        last_day = calendar.monthrange(end_date.year, end_date.month)[1]
+        end_date = end_date.replace(day=last_day)
+
+    if end_date > today:
+        end_date = today
+
+    # 取得比對基準
+    if interval == "週":
+        prev_start = start_date - timedelta(days=7)
+        prev_end = start_date - timedelta(days=1)
+        raw_prev = stock.fetch_from(prev_start.year, prev_start.month)
+        prev_filtered = [d for d in raw_prev if prev_start <= d.date <= prev_end]
+        if prev_filtered:
+            prev_high = max(d.high for d in prev_filtered)
+            prev_low = min(d.low for d in prev_filtered)
+            prev_volume = sum(d.capacity for d in prev_filtered)
+            prev_diff = prev_high - prev_low
+        else:
+            prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
+    elif interval == "月":
+        prev_month_end = start_date - timedelta(days=1)
+        prev_month_start = prev_month_end.replace(day=1)
+        raw_prev = stock.fetch_from(prev_month_start.year, prev_month_start.month)
+        prev_filtered = [d for d in raw_prev if prev_month_start <= d.date <= prev_month_end]
+        if prev_filtered:
+            prev_high = max(d.high for d in prev_filtered)
+            prev_low = min(d.low for d in prev_filtered)
+            prev_volume = sum(d.capacity for d in prev_filtered)
+            prev_diff = prev_high - prev_low
+        else:
+            prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
+    else:
+        extra_date = start_date - timedelta(days=14)
+        raw_prev = stock.fetch_from(extra_date.year, extra_date.month)
+        prev_filtered = [d for d in raw_prev if d.date < start_date]
+        if prev_filtered:
+            d = max(prev_filtered, key=lambda x: x.date)
+            prev_high = d.high
+            prev_low = d.low
+            prev_volume = d.capacity
+            prev_diff = prev_high - prev_low
+        else:
+            prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
+
+    # 取得主資料
     raw_data = stock.fetch_from(start_date.year, start_date.month)
     filtered = [d for d in raw_data if start_date <= d.date <= end_date]
 
@@ -60,7 +102,7 @@ if st.button("產出報表"):
         st.error("查無資料，請檢查股票代碼與時間範圍。")
         st.stop()
 
-    # 建立 DataFrame
+    # 轉 DataFrame
     df = pd.DataFrame([{
         '日期': d.date,
         '最高價': d.high,
@@ -68,37 +110,23 @@ if st.button("產出報表"):
         '成交量': d.capacity
     } for d in filtered])
 
-    # 若要比對第一筆資料用，補一筆上一日
-    extra_date = start_date - timedelta(days=5)
-    extra_data = stock.fetch_from(extra_date.year, extra_date.month)
-    extra_point = next((d for d in reversed(extra_data) if d.date < start_date), None)
-    if extra_point:
-        df = pd.concat([pd.DataFrame([{
-            '日期': extra_point.date,
-            '最高價': extra_point.high,
-            '最低價': extra_point.low,
-            '成交量': extra_point.capacity
-        }]), df], ignore_index=True)
-
-    # 統計區間分類
+    # 統計區間
     if interval == "日":
-        group_keys = df.index[1:]  # 每天就是一個 key（排除比對用的首筆）
-        agg_df = df.iloc[1:].copy()
+        agg_df = df.copy()
     elif interval == "週":
-        df["week"] = df["日期"].apply(lambda x: x.isocalendar()[1])
-        df["year"] = df["日期"].apply(lambda x: x.year)
-        # 以 year, week 分群
-        grouped = df.iloc[1:].groupby(["year", "week"])
+        df["iso_year"] = df["日期"].apply(lambda x: x.isocalendar()[0])
+        df["iso_week"] = df["日期"].apply(lambda x: x.isocalendar()[1])
+        grouped = df.groupby(["iso_year", "iso_week"])
         agg_df = grouped.agg({
             "日期": "last",
             "最高價": "max",
             "最低價": "min",
             "成交量": "sum"
         }).reset_index(drop=True)
-    else:  # interval == "月"
+    else:  # 月
         df["month"] = df["日期"].apply(lambda x: x.month)
         df["year"] = df["日期"].apply(lambda x: x.year)
-        grouped = df.iloc[1:].groupby(["year", "month"])
+        grouped = df.groupby(["year", "month"])
         agg_df = grouped.agg({
             "日期": "last",
             "最高價": "max",
@@ -106,113 +134,104 @@ if st.button("產出報表"):
             "成交量": "sum"
         }).reset_index(drop=True)
 
-    # 差異色、成交符號、其他欄位計算
+    # 顏色計算
     agg_df["差色"] = ""
     agg_df["高色"] = ""
     agg_df["低色"] = ""
     agg_df["成交符"] = ""
     agg_df["符色"] = ""
-    prev = df.iloc[0]  # 第一筆拿來比對
-    for i, row in agg_df.iterrows():
-        diff = row["最高價"] - row["最低價"]
-        prev_diff = prev["最高價"] - prev["最低價"]
-        agg_df.loc[i, "高色"] = "FF0000" if row["最高價"] >= prev["最高價"] else "0000FF"
-        agg_df.loc[i, "低色"] = "FF0000" if row["最低價"] >= prev["最低價"] else "0000FF"
-        agg_df.loc[i, "成交符"] = "🔴" if row["成交量"] >= prev["成交量"] else "🔵"
-        agg_df.loc[i, "符色"] = "FF0000" if agg_df.loc[i, "成交符"] == "🔴" else "0000FF"
-        agg_df.loc[i, "差色"] = "FF0000" if diff >= prev_diff else "0000FF"
-        prev = row
 
-    # 切成3區塊
-    base = len(agg_df) // 3
-    remainder = len(agg_df) % 3
-    sizes = [base + (1 if i < remainder else 0) for i in range(3)]
+    for i, row in agg_df.iterrows():
+        if i == 0 and prev_high is not None:
+            cmp_high = prev_high
+            cmp_low = prev_low
+            cmp_volume = prev_volume
+            cmp_diff = prev_diff
+        else:
+            prev_row = agg_df.iloc[i-1]
+            cmp_high = prev_row["最高價"]
+            cmp_low = prev_row["最低價"]
+            cmp_volume = prev_row["成交量"]
+            cmp_diff = prev_row["最高價"] - prev_row["最低價"]
+
+        diff = row["最高價"] - row["最低價"]
+        agg_df.loc[i, "高色"] = "FFCC3333" if row["最高價"] >= cmp_high else "FF3366CC"
+        agg_df.loc[i, "低色"] = "FFCC3333" if row["最低價"] >= cmp_low else "FF3366CC"
+        agg_df.loc[i, "成交符"] = "■"
+        agg_df.loc[i, "符色"] = "FFCC3333" if row["成交量"] >= cmp_volume else "FF3366CC"
+        agg_df.loc[i, "差色"] = "FFCC3333" if diff >= cmp_diff else "FF3366CC"
+
+    # 分頁
+    chunk_size = 43
     chunks = []
-    s = 0
-    for size in sizes:
-        chunks.append(agg_df.iloc[s:s+size].reset_index(drop=True))
-        s += size
+    for i in range(0, len(agg_df), chunk_size):
+        chunks.append(agg_df.iloc[i:i+chunk_size].reset_index(drop=True))
+
+    blocks_per_sheet = 3
+    total_blocks = len(chunks)
+    total_pages = math.ceil(total_blocks / blocks_per_sheet)
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "股價報表"
+    ws.title = f"{interval}報表"
 
-    thin_border = Border(
-        left=Side(style='thin'), right=Side(style='thin'),
-        top=Side(style='thin'), bottom=Side(style='thin')
-    )
-    bottom_border = Border(bottom=Side(style="thin"))
-
-    # 插入標題兩列
-    ws.insert_rows(1)
-    ws.insert_rows(2)
-    title = f"{selected} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（{interval}）"
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=20)
-    title_cell = ws.cell(row=1, column=1, value=title)
-    title_cell.font = Font(bold=True, size=14)
-    title_cell.alignment = Alignment(horizontal="center", vertical="center")
-    ws.row_dimensions[1].height = 30
-
-    # 設定標題列，第一二欄合併為「日期」
+    title = f"{stock_name} {start_date.strftime('%Y-%m-%d')}～{end_date.strftime('%Y-%m-%d')}（{interval}）"
+    sheet_count = 0
     headers = ["日期", "", "高", "低", "漲幅", "量", ""] * 3
-    # 合併「日期」欄
-    for block in range(3):
-        col = block * 7 + 1
-        ws.merge_cells(start_row=2, start_column=col, end_row=2, end_column=col+1)
-        cell = ws.cell(row=2, column=col, value="日期")
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
-        # 其他欄
-        for idx, h in enumerate(headers[2:7], 3):
-            cell2 = ws.cell(row=2, column=col+idx-1, value=h)
-            cell2.font = Font(bold=True)
-            cell2.alignment = Alignment(horizontal="center")
-
-    # 寫入內容
     starts = [1, 8, 15]
+    prev_month = None
+    prev_year = None
+
     for block, data in enumerate(chunks):
-        col = starts[block]
+        if block % blocks_per_sheet == 0:
+            sheet_count = block // blocks_per_sheet
+            ws = wb.active if block == 0 else wb.create_sheet(title=f"{interval}報表{sheet_count+1}")
+            ws.insert_rows(1)
+            ws.insert_rows(2)
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=20)
+            page_info = f"（第 {sheet_count+1}/{total_pages} 頁）" if total_pages > 1 else ""
+            title_cell = ws.cell(row=1, column=1, value=f"{title}{page_info}")
+            title_cell.font = Font(bold=True, size=14)
+            title_cell.alignment = Alignment(horizontal="center", vertical="center")
+            ws.row_dimensions[1].height = 30
+            for i, h in enumerate(headers):
+                cell = ws.cell(row=2, column=i + 1, value=h)
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal="center")
+            for i in starts:
+                ws.merge_cells(start_row=2, start_column=i, end_row=2, end_column=i+1)
+            sheet_count += 1
+
+        col = starts[block % 3]
         row_index = 3
-        prev_month = prev_year = None
+
         for i, row in data.iterrows():
             dt = row["日期"]
-
-            # ========== 日期/週/月分流 ==============
             if interval == "日":
-                # 換月首日顯示 M/D
-                if i == 0 or dt.month != prev_month:
+                if (prev_month != None) and (dt.month != prev_month):
                     day_str = f"{dt.month}/{dt.day}"
                 else:
                     day_str = f"{dt.day}"
-                # 星期
-                week_str = weekday_str(dt)
+                week_str = ["一", "二", "三", "四", "五", "六", "日"][dt.weekday()]
                 prev_month = dt.month
-                # 填入資料
                 ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
                 ws.cell(row=row_index, column=col+1, value=week_str).alignment = Alignment(horizontal="center")
             elif interval == "週":
-                # 換年顯示 YYYY/M/D
-                if i == 0 or dt.year != prev_year:
+                if (prev_year != None) and (dt.year != prev_year):
                     day_str = f"{dt.year}/{dt.month}/{dt.day}"
                 else:
                     day_str = f"{dt.month}/{dt.day}"
-                # 計算該月第幾週
-                w_of_m = week_of_month(dt)
                 prev_year = dt.year
+                ws.merge_cells(start_row=row_index, start_column=col, end_row=row_index, end_column=col+1)
                 ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
-                ws.cell(row=row_index, column=col+1, value=w_of_m).alignment = Alignment(horizontal="center")
-            else:  # interval == "月"
-                # 換年顯示 YYYY/M
-                if i == 0 or dt.year != prev_year:
+            else:
+                if (prev_year != None) and (dt.year != prev_year):
                     day_str = f"{dt.year}/{dt.month}"
                 else:
                     day_str = f"{dt.month}"
-                m_of_y = dt.month
                 prev_year = dt.year
+                ws.merge_cells(start_row=row_index, start_column=col, end_row=row_index, end_column=col+1)
                 ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
-                ws.cell(row=row_index, column=col+1, value=m_of_y).alignment = Alignment(horizontal="center")
-
-            # 其餘欄位
             h = ws.cell(row=row_index, column=col+2, value=row["最高價"])
             h.font = Font(color=row["高色"])
             h.alignment = Alignment(horizontal="center")
@@ -227,31 +246,30 @@ if st.button("產出報表"):
             d.alignment = Alignment(horizontal="center")
 
             v = ws.cell(row=row_index, column=col+5, value=row["成交符"])
-            v.font = Font(color=row["符色"])
+            v.font = Font(color=row["符色"], size=10)  # 方形空心、可調大小
             v.alignment = Alignment(horizontal="center")
-
             row_index += 1
 
-    # 欄寬自動
-    for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
-        col_letter = get_column_letter(col_cells[0].column)
-        max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)
-        ws.column_dimensions[col_letter].width = max(2, min(max_len + 2, 16))
+        # 欄寬自動
+        for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
+            col_letter = get_column_letter(col_cells[0].column)
+            max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)
+            ws.column_dimensions[col_letter].width = max(2, min(max_len + 2, 16))
+        for i in range(8, ws.max_column + 1):
+            ws.column_dimensions[get_column_letter(i)].width = ws.column_dimensions[get_column_letter(i-7)].width
 
     ws.freeze_panes = "A3"
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 1
     ws.page_setup.scale = None
     ws.page_setup.orientation = "portrait"
-    ws.page_setup.paperSize = 9
-    ws.sheet_properties = WorksheetProperties(
-        pageSetUpPr=PageSetupProperties(fitToPage=True)
-    )
+    ws.page_setup.paperSize = 11
+    ws.sheet_properties = WorksheetProperties(pageSetUpPr=PageSetupProperties(fitToPage=True))
     ws.page_setup.horizontalCentered = True
     ws.page_setup.verticalCentered = True
     ws.page_margins = PageMargins(
         left=0.3, right=0.3,
-        top=0.5, bottom=0.5,
+        top=0.2, bottom=0.2,
         header=0.2, footer=0.2
     )
 

@@ -271,9 +271,9 @@ if st.button("產生報表"):
     ws.page_setup.horizontalCentered = True
     ws.page_setup.verticalCentered = True
     ws.page_margins = PageMargins(
-        left=0.3, right=0.3,
-        top=0.2, bottom=0.2,
-        header=0.2, footer=0.2
+        left=0.1, right=0.1,
+        top=0.1, bottom=0.1,
+        header=0.0, footer=0.0
     )
 
     buffer = BytesIO()

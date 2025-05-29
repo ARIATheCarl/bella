@@ -11,7 +11,7 @@ from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperti
 import math
 import calendar
 
-st.set_page_config(page_title="股價報表產生器", layout="centered")
+st.set_page_config(page_title="蘇大哥專用工具", layout="centered")
 
 # ===== 股票選單 =====
 from twstock import codes
@@ -21,21 +21,24 @@ stock_options = [
     if hasattr(codes[code], "name") and codes[code].name and 4 <= len(code) <= 6
 ]
 
-st.title("台股區間報表產生器")
+st.title("蘇大哥專用工具")
 
+interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
 selected = st.selectbox("選擇股票代碼", stock_options)
 stock_id = selected.split()[0]
 stock_name = selected.split()[1]
-interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
 
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)
 
-col1, col2 = st.columns(2)
-with col1:
-    start_date = st.date_input("開始日期", value=datetime(2024, 1, 1), min_value=min_day, max_value=max_day)
-with col2:
-    end_date = st.date_input("結束日期", value=datetime.today(), min_value=min_day, max_value=max_day)
+start_date = datetime.combine(
+    st.date_input("起始日期", datetime.today() - timedelta(days=90), min_value=min_day, max_value=max_day),
+    time.min
+)
+end_date = datetime.combine(
+    st.date_input("結束日期", datetime.today(), min_value=min_day, max_value=max_day),
+    time.max
+)
 
 # 按下按鈕才執行
 if st.button("產生報表"):

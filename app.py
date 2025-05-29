@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import twstock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side

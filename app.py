@@ -27,7 +27,7 @@ stock_options = [
 ]
 # 2. 做一份漂亮的顯示清單
 display_options = [
-    f"{row[2]:<3}   {row[0]:>6}   {row[1]:<8}   {row[3]}"
+    f"{row[1]:<8}   {row[2]:<3}   {row[0]:>6}   {row[3]}"
     for row in stock_options
 ]
 # 3. selectbox 用 index 選

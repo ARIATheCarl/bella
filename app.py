@@ -36,10 +36,6 @@ selected = st.selectbox("選擇股票代碼", stock_options)
 stock_id = selected.split()[0]
 stock_name = selected.split()[1]
 
-# 顯示股票類型（上市／上櫃／興櫃）
-stock_type = get_stock_type(stock_id)
-st.info(f"📄 目前選取股票：{stock_name}（{stock_id}），市場別：**{stock_type}**")
-
 
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)
@@ -84,6 +80,11 @@ def get_stock_type(stock_id: str) -> str:
         return row.iloc[0]["type"]  # 上市/上櫃/興櫃
     # fallback: twstock 以6開頭預設上市，其餘都視為上櫃
     return "上市" if stock_id.startswith("6") else "上櫃"
+
+
+# 顯示股票類型（上市／上櫃／興櫃）
+stock_type = get_stock_type(stock_id)
+st.info(f"📄 目前選取股票：{stock_name}（{stock_id}），市場別：**{stock_type}**")
 
 # ====== FinMind 取資料，回傳和 twstock 類似的物件list ======
 def fetch_finmind_data(stock_id: str, start: str, end: str) -> list:

@@ -38,7 +38,7 @@ if not stock_options:
     st.stop()
 # 2. 做一份漂亮的顯示清單
 display_options = [
-    f"{row[0]:>6}{row[1]:<20}"
+    f"{row[0] } {row[1]:<20}"
     for row in stock_options
 ]
 # 3. selectbox 用 index 選

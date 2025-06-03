@@ -36,6 +36,17 @@ selected = st.selectbox("選擇股票代碼", stock_options)
 stock_id = selected.split()[0]
 stock_name = selected.split()[1]
 
+# ====== 判斷上市/上櫃/興櫃 ======
+def get_stock_type(stock_id: str) -> str:
+    row = stock_info_df[stock_info_df["stock_id"] == stock_id]
+    if not row.empty:
+        return row.iloc[0]["type"]  # 上市/上櫃/興櫃
+    # fallback: twstock 以6開頭預設上市，其餘都視為上櫃
+    return "上市" if stock_id.startswith("6") else "上櫃"
+
+# 顯示股票類型（上市／上櫃／興櫃）
+stock_type = get_stock_type(stock_id)
+st.info(f"📄 目前選取股票：{stock_name}（{stock_id}），市場別：**{stock_type}**")
 
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)
@@ -73,23 +84,10 @@ except ValueError:
     end_date = datetime(end_year, end_month, 1)
     st.warning("結束日設為該月1日（選擇的日期無效）")
 
-# ====== 判斷上市/上櫃 ======
-def get_stock_type(stock_id: str) -> str:
-    row = stock_info_df[stock_info_df["stock_id"] == stock_id]
-    if not row.empty:
-        return row.iloc[0]["type"]  # 上市/上櫃/興櫃
-    # fallback: twstock 以6開頭預設上市，其餘都視為上櫃
-    return "上市" if stock_id.startswith("6") else "上櫃"
-
-
-# 顯示股票類型（上市／上櫃／興櫃）
-stock_type = get_stock_type(stock_id)
-st.info(f"📄 目前選取股票：{stock_name}（{stock_id}），市場別：**{stock_type}**")
-
 # ====== FinMind 取資料，回傳和 twstock 類似的物件list ======
 def fetch_finmind_data(stock_id: str, start: str, end: str) -> list:
     api = DataLoader()
-    api.login_by_token(api_token="你的FinMind API Token")  # <<<<<< 填入你的 token
+    api.login_by_token(api_token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNS0wNi0wMyAxMDozMzoxNSIsInVzZXJfaWQiOiJjYXJsNzk5MSIsImlwIjoiNDkuMjE0LjAuMTQxIn0.Qzdlv5fe2J3rRUCpAYDltguY_oGgLlqp7kwILmnTVdA")  # <<<<<< 填入你的 token
     df = api.taiwan_stock_daily(
         stock_id=stock_id,
         start_date=start,

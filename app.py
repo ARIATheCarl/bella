@@ -31,9 +31,19 @@ stock_options = [
 st.title("蘇大哥專用工具")
 
 interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
+# 股票選單
+if not stock_options:
+    st.error("查無可用股票資料，請確認 FinMind API 是否正常。")
+    st.stop()
+
 selected = st.selectbox("選擇股票代碼", stock_options)
+if not selected:
+    st.warning("⚠️ 尚未選擇股票")
+    st.stop()
+
 stock_id = selected.split()[0]
 stock_name = selected.split()[1]
+
 stock_type = stock_info_df[stock_info_df["stock_id"] == stock_id].iloc[0]["type"]
 st.info(f"📄 目前選取股票：{stock_name}（{stock_id}），市場別：**{stock_type}**")
 

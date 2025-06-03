@@ -4,3 +4,4 @@ pandas
 openpyxl
 lxml
 streamlit-calendar
+FinMind

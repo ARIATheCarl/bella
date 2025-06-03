@@ -9,7 +9,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
 import math
-import calendar
+from streamlit_calendar import calendar
 
 st.set_page_config(page_title="蘇大哥專用工具", layout="centered")
 
@@ -21,7 +21,7 @@ stock_options = [
     if hasattr(codes[code], "name") and codes[code].name and 4 <= len(code) <= 6
 ]
 
-st.title("蘇大哥專用工具")
+st.title("蘇文政專用工具")
 
 interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
 selected = st.selectbox("選擇股票代碼", stock_options)
@@ -31,14 +31,48 @@ stock_name = selected.split()[1]
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)
 
-start_date = datetime.combine(
-    st.date_input("起始日期", datetime.today() - timedelta(days=90), min_value=min_day, max_value=max_day),
-    time.min
+
+# 你可以選單一個日期（會回傳日期事件）
+st.write("請點擊下方月曆選擇起始日期")
+start_event = calendar(
+    locale='zh-tw',  # 設定為繁體中文
+    options={
+        "initialView": "dayGridMonth",
+        "headerToolbar": {
+            "left": "prev,next today",
+            "center": "title",
+            "right": "dayGridMonth,timeGridWeek,timeGridDay"
+        }
+    },
+    key="start_calendar"
 )
-end_date = datetime.combine(
-    st.date_input("結束日期", datetime.today(), min_value=min_day, max_value=max_day),
-    time.max
+
+st.write("請點擊下方月曆選擇結束日期")
+end_event = calendar(
+    locale='zh-tw',  # 設定為繁體中文
+    options={
+        "initialView": "dayGridMonth",
+        "headerToolbar": {
+            "left": "prev,next today",
+            "center": "title",
+            "right": "dayGridMonth,timeGridWeek,timeGridDay"
+        }
+    },
+    key="end_calendar"
 )
+
+# 取得使用者選擇的日期（點擊事件的日期）
+start_date = None
+end_date = None
+
+if start_event and "start" in start_event:
+    start_date = datetime.strptime(start_event["start"], "%Y-%m-%d")
+    st.success(f"起始日期：{start_date.strftime('%Y-%m-%d')}")
+
+if end_event and "start" in end_event:
+    end_date = datetime.strptime(end_event["start"], "%Y-%m-%d")
+    st.success(f"結束日期：{end_date.strftime('%Y-%m-%d')}")
+
 
 # 按下按鈕才執行
 if st.button("產生報表"):

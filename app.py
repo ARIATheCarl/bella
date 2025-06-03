@@ -30,17 +30,7 @@ stock_info_df["type"] = stock_info_df["type"].map(type_mapping).fillna(stock_inf
 
 # 股票選單: 只保留有上市/上櫃/興櫃型態的股票，顯示「股票代碼 股票名稱」
 stock_info_df = stock_info_df[stock_info_df['type'].isin(['上市', '上櫃', '興櫃'])]
-
-# 顯示股票清單表格
-st.dataframe(
-    stock_info_df[["stock_id", "stock_name", "type", "date"]]
-    .rename(columns={
-        "stock_id": "股票代碼",
-        "stock_name": "名稱",
-        "type": "市場別",
-        "date": "上市日期"
-    })
-)
+selected = st.selectbox("選擇股票代碼", stock_options)
 
 st.title("蘇大哥專用工具")
 

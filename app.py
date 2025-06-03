@@ -53,11 +53,11 @@ if not selected:
     st.warning("⚠️ 尚未選擇股票")
     st.stop()
 
-min_day = datetime(2015, 1, 1)
+min_day = datetime(2001, 1, 1)
 max_day = datetime(2035, 12, 31)
 
 # 年月日下拉式選單
-years = list(range(2015, 2036))
+years = list(range(2001, 2036))
 months = list(range(1, 13))
 days = list(range(1, 32))
 

@@ -38,7 +38,7 @@ if not stock_options:
     st.stop()
 # 2. 做一份漂亮的顯示清單
 display_options = [
-    f"   {row[2]:<3} {row[0]:>6}  {row[1]:<8} "
+    f" {row[0]:>6}  {row[1]:<8} "
     for row in stock_options
 ]
 # 3. selectbox 用 index 選
@@ -61,7 +61,7 @@ st.info(
     **{stock_name}**（代碼：{stock_id}）
     - 市場別：{market}
     - 產業類別：{industry}
-    - 上市(櫃)日：{listed_date}
+    - 資料更新日：{listed_date}
     """
 )
 

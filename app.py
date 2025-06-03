@@ -10,8 +10,17 @@ from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
 import math
 import calendar
+from FinMind.data import DataLoader
 
 st.set_page_config(page_title="蘇大哥專用工具", layout="centered")
+
+# ===== 下載 FinMind 股票資訊 =====
+@st.cache_data
+def get_stock_info():
+    api = DataLoader()
+    return api.taiwan_stock_info()
+
+stock_info_df = get_stock_info()
 
 # ===== 股票選單 =====
 from twstock import codes
@@ -20,7 +29,6 @@ stock_options = [
     for code in sorted(codes.keys())
     if hasattr(codes[code], "name") and codes[code].name and 4 <= len(code) <= 6
 ]
-
 st.title("蘇大哥專用工具")
 
 interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
@@ -64,14 +72,42 @@ except ValueError:
     end_date = datetime(end_year, end_month, 1)
     st.warning("結束日設為該月1日（選擇的日期無效）")
 
+# ====== 判斷上市/上櫃 ======
+def get_stock_type(stock_id: str) -> str:
+    row = stock_info_df[stock_info_df["stock_id"] == stock_id]
+    if not row.empty:
+        return row.iloc[0]["type"]  # 上市/上櫃/興櫃
+    # fallback: twstock 以6開頭預設上市，其餘都視為上櫃
+    return "上市" if stock_id.startswith("6") else "上櫃"
 
-# 按下按鈕才執行
+# ====== FinMind 取資料，回傳和 twstock 類似的物件list ======
+def fetch_finmind_data(stock_id: str, start: str, end: str) -> list:
+    api = DataLoader()
+    api.login_by_token(api_token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNS0wNi0wMyAxMDozMzoxNSIsInVzZXJfaWQiOiJjYXJsNzk5MSIsImlwIjoiNDkuMjE0LjAuMTQxIn0.Qzdlv5fe2J3rRUCpAYDltguY_oGgLlqp7kwILmnTVdA")  # <<<<<< 填入你的 token
+    df = api.taiwan_stock_daily(
+        stock_id=stock_id,
+        start_date=start,
+        end_date=end,
+    )
+    df["date"] = pd.to_datetime(df["date"])
+    # 回傳格式統一
+    class StockData:
+        def __init__(self, date, high, low, capacity):
+            self.date = date
+            self.high = high
+            self.low = low
+            self.capacity = capacity
+    return [
+        StockData(row["date"], row["max_price"], row["min_price"], row["Trading_Volume"])
+        for _, row in df.iterrows()
+    ]
+
+# ========== 主程式 ==========
 if st.button("產生報表"):
     start_date = datetime.combine(start_date, datetime.min.time())
     end_date = datetime.combine(end_date, datetime.min.time())
-
-    stock = twstock.Stock(stock_id)
     today = datetime.today()
+
     # 區間對齊
     if interval == "週":
         start_date = start_date - timedelta(days=start_date.weekday())
@@ -80,55 +116,77 @@ if st.button("產生報表"):
         start_date = start_date.replace(day=1)
         last_day = calendar.monthrange(end_date.year, end_date.month)[1]
         end_date = end_date.replace(day=last_day)
-
     if end_date > today:
         end_date = today
 
-    # 取得比對基準
-    if interval == "週":
-        prev_start = start_date - timedelta(days=7)
-        prev_end = start_date - timedelta(days=1)
-        raw_prev = stock.fetch_from(prev_start.year, prev_start.month)
-        prev_filtered = [d for d in raw_prev if prev_start <= d.date <= prev_end]
-        if prev_filtered:
-            prev_high = max(d.high for d in prev_filtered)
-            prev_low = min(d.low for d in prev_filtered)
-            prev_volume = sum(d.capacity for d in prev_filtered)
-            prev_diff = prev_high - prev_low
-        else:
-            prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
-    elif interval == "月":
-        prev_month_end = start_date - timedelta(days=1)
-        prev_month_start = prev_month_end.replace(day=1)
-        raw_prev = stock.fetch_from(prev_month_start.year, prev_month_start.month)
-        prev_filtered = [d for d in raw_prev if prev_month_start <= d.date <= prev_month_end]
-        if prev_filtered:
-            prev_high = max(d.high for d in prev_filtered)
-            prev_low = min(d.low for d in prev_filtered)
-            prev_volume = sum(d.capacity for d in prev_filtered)
-            prev_diff = prev_high - prev_low
-        else:
-            prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
-    else:
-        extra_date = start_date - timedelta(days=14)
-        raw_prev = stock.fetch_from(extra_date.year, extra_date.month)
-        prev_filtered = [d for d in raw_prev if d.date < start_date]
-        if prev_filtered:
-            d = max(prev_filtered, key=lambda x: x.date)
-            prev_high = d.high
-            prev_low = d.low
-            prev_volume = d.capacity
-            prev_diff = prev_high - prev_low
-        else:
-            prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
+    stock_type = get_stock_type(stock_id)
 
-    # 取得主資料
-    raw_data = stock.fetch_from(start_date.year, start_date.month)
+    # 取主資料
+    if stock_type == "上市":
+        stock = twstock.Stock(stock_id)
+        raw_data = stock.fetch_from(start_date.year, start_date.month)
+    else:  # 上櫃/興櫃用 FinMind
+        raw_data = fetch_finmind_data(stock_id, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
+
     filtered = [d for d in raw_data if start_date <= d.date <= end_date]
-
     if not filtered:
         st.error("查無資料，請檢查股票代碼與時間範圍。")
         st.stop()
+
+    # 取得比對基準
+    def fetch_prev(interval, stock_type, stock, stock_id, start_date, end_date):
+        if interval == "週":
+            prev_start = start_date - timedelta(days=7)
+            prev_end = start_date - timedelta(days=1)
+            if stock_type == "上市":
+                raw_prev = stock.fetch_from(prev_start.year, prev_start.month)
+            else:
+                raw_prev = fetch_finmind_data(stock_id, prev_start.strftime("%Y-%m-%d"), prev_end.strftime("%Y-%m-%d"))
+            prev_filtered = [d for d in raw_prev if prev_start <= d.date <= prev_end]
+            if prev_filtered:
+                prev_high = max(d.high for d in prev_filtered)
+                prev_low = min(d.low for d in prev_filtered)
+                prev_volume = sum(d.capacity for d in prev_filtered)
+                prev_diff = prev_high - prev_low
+            else:
+                prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
+        elif interval == "月":
+            prev_month_end = start_date - timedelta(days=1)
+            prev_month_start = prev_month_end.replace(day=1)
+            if stock_type == "上市":
+                raw_prev = stock.fetch_from(prev_month_start.year, prev_month_start.month)
+            else:
+                raw_prev = fetch_finmind_data(stock_id, prev_month_start.strftime("%Y-%m-%d"), prev_month_end.strftime("%Y-%m-%d"))
+            prev_filtered = [d for d in raw_prev if prev_month_start <= d.date <= prev_month_end]
+            if prev_filtered:
+                prev_high = max(d.high for d in prev_filtered)
+                prev_low = min(d.low for d in prev_filtered)
+                prev_volume = sum(d.capacity for d in prev_filtered)
+                prev_diff = prev_high - prev_low
+            else:
+                prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
+        else:
+            extra_date = start_date - timedelta(days=14)
+            if stock_type == "上市":
+                raw_prev = stock.fetch_from(extra_date.year, extra_date.month)
+            else:
+                raw_prev = fetch_finmind_data(stock_id, extra_date.strftime("%Y-%m-%d"), start_date.strftime("%Y-%m-%d"))
+            prev_filtered = [d for d in raw_prev if d.date < start_date]
+            if prev_filtered:
+                d = max(prev_filtered, key=lambda x: x.date)
+                prev_high = d.high
+                prev_low = d.low
+                prev_volume = d.capacity
+                prev_diff = prev_high - prev_low
+            else:
+                prev_high, prev_low, prev_volume, prev_diff = None, None, None, None
+        return prev_high, prev_low, prev_volume, prev_diff
+
+    if stock_type == "上市":
+        stock = twstock.Stock(stock_id)
+    prev_high, prev_low, prev_volume, prev_diff = fetch_prev(
+        interval, stock_type, stock if stock_type == "上市" else None, stock_id, start_date, end_date
+    )
 
     # 轉 DataFrame
     df = pd.DataFrame([{

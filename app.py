@@ -69,7 +69,7 @@ st.info(
 
 
 # 年月日下拉式選單
-years = list(range(2001, 2036))
+years = list(range(1991, 2036))
 months = list(range(1, 13))
 days = list(range(1, 32))
 

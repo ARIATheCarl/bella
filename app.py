@@ -48,14 +48,6 @@ if not stock_options:
     st.error("查無可用股票資料，請確認 FinMind API 是否正常。")
     st.stop()
 
-selected = st.selectbox("選擇股票代碼", stock_options)
-if not selected:
-    st.warning("⚠️ 尚未選擇股票")
-    st.stop()
-
-min_day = datetime(2001, 1, 1)
-max_day = datetime(2035, 12, 31)
-
 # 年月日下拉式選單
 years = list(range(2001, 2036))
 months = list(range(1, 13))

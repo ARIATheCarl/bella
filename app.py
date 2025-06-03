@@ -11,7 +11,7 @@ import math
 import calendar
 from FinMind.data import DataLoader
 
-st.set_page_config(page_title="蘇大哥專用工具", layout="centered")
+st.set_page_config(page_title="蘇文政股期分析專用工具", layout="centered")
 
 # ===== 下載 FinMind 股票資訊 =====
 @st.cache_data
@@ -22,7 +22,7 @@ def get_stock_info():
 stock_info_df = get_stock_info()
 
 
-st.title("蘇大哥專用工具")
+st.title("蘇文政股期分析專用工具")
 
 interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
 

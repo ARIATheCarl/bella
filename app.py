@@ -40,9 +40,9 @@ col1, col2, col3 = st.columns(3)
 with col1:
     start_year = st.selectbox("起始年", years, index=years.index(datetime.today().year))
 with col2:
-    start_month = st.selectbox("起始月", months, index=1)
+    start_month = st.selectbox("起始月", months, index=0)
 with col3:
-    start_day = st.selectbox("起始日", days, index=1)
+    start_day = st.selectbox("起始日", days, index=0)
 
 col4, col5, col6 = st.columns(3)
 with col4:

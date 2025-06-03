@@ -38,11 +38,16 @@ if not stock_options:
     st.stop()
 # 2. 做一份漂亮的顯示清單
 display_options = [
-    f"{row[0] } {row[1]:<20}"
+    f" {row[1]:<8}  {row[0]:>6}   {row[2]:<3} "
     for row in stock_options
 ]
 # 3. selectbox 用 index 選
-selected_index = st.selectbox("選擇股票代碼", stock_options)
+selected_index = st.selectbox(
+    "選擇股票代碼", 
+    range(len(stock_options)), 
+    format_func=lambda i: display_options[i]
+)
+stock_id, stock_name, stock_type, stock_date = stock_options[selected_index]
 
 # 4. 正確地由 index 取 tuple 拆解
 stock_id, stock_name, stock_type, stock_date = stock_options[selected_index]

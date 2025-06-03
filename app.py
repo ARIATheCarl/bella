@@ -25,10 +25,6 @@ stock_info_df = get_stock_info()
 st.title("蘇大哥專用工具")
 
 interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
-# 股票選單
-if not stock_options:
-    st.error("查無可用股票資料，請確認 FinMind API 是否正常。")
-    st.stop()
 
 
 # 1. 先產生 tuple 清單
@@ -36,6 +32,10 @@ stock_options = [
     (row['stock_id'], row['stock_name'], row['type'], row['date'])
     for _, row in stock_info_df.iterrows()
 ]
+# 股票選單
+if not stock_options:
+    st.error("查無可用股票資料，請確認 FinMind API 是否正常。")
+    st.stop()
 # 2. 做一份漂亮的顯示清單
 display_options = [
     f"{row[0]:>6}    {row[1]:<8}   {row[2]:<3}   {row[3]}"

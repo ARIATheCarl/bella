@@ -20,18 +20,8 @@ def get_stock_info():
     return api.taiwan_stock_info()
 
 stock_info_df = get_stock_info()
-type_mapping = {
-    "twse": "上市",
-    "otc": "上櫃",
-    "rotc": "興櫃",
-    "ETF": "ETF"
-}
-stock_info_df["type"] = stock_info_df["type"].map(type_mapping).fillna(stock_info_df["type"])
-
-# 股票選單: 只保留有上市/上櫃/興櫃型態的股票，顯示「股票代碼 股票名稱」
-stock_info_df = stock_info_df[stock_info_df['type'].isin(['上市', '上櫃', '興櫃'])]
 stock_options = [
-    f"{row['stock_id']} {row['stock_name']} {row['type']} {row['date']}"
+    f"{row['stock_id']:>6}   {row['stock_name']:<8}   {row['type']:<3}   {row['date']}"
     for _, row in stock_info_df.iterrows()
 ]
 
@@ -52,7 +42,6 @@ stock_id = selected.split()[0]
 stock_name = selected.split()[1]
 
 stock_type = stock_info_df[stock_info_df["stock_id"] == stock_id].iloc[0]["type"]
-st.info(f"📄 目前選取股票：{stock_name}（{stock_id}），市場別：**{stock_type}**")
 
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)

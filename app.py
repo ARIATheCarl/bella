@@ -48,9 +48,25 @@ selected_index = st.selectbox(
     format_func=lambda i: display_options[i]
 )
 stock_id, stock_name, stock_type, stock_date = stock_options[selected_index]
-st.success(
-    f"📈 你已選擇：**{stock_name}**（{stock_id}），市場別：**{stock_type}**，上市日：{stock_date}"
+
+# 取得更完整的資訊
+row = stock_info_df[stock_info_df["stock_id"] == stock_id].iloc[0]
+industry = row.get("industry_category", "未知產業")
+market = row.get("type", "未知市場")
+listed_date = row.get("date", "未知日期")
+
+# 顯示更多細節
+st.info(
+    f"""
+    **{stock_name}**（代碼：{stock_id}）
+    - 市場別：{market}
+    - 產業類別：{industry}
+    - 上市(櫃)日：{listed_date}
+    """
 )
+
+# 如果想要當日收盤價等資訊，可以加上即時查詢（如有即時 API）
+
 
 # 年月日下拉式選單
 years = list(range(2001, 2036))

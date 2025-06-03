@@ -44,8 +44,7 @@ display_options = [
 # 3. selectbox 用 index 選
 selected_index = st.selectbox(
     "選擇股票代碼", 
-    range(len(stock_options)), 
-    format_func=lambda i: display_options[i]
+    range(len(stock_options))
 )
 
 # 4. 正確地由 index 取 tuple 拆解

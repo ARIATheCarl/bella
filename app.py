@@ -9,11 +9,12 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
 import math
+import calendar
 from streamlit_calendar import calendar
 
 st.set_page_config(page_title="蘇大哥專用工具", layout="centered")
 
-# ===== 股票選單 =====
+# 股票選單
 from twstock import codes
 stock_options = [
     f"{code} {codes[code].name}"
@@ -31,12 +32,12 @@ stock_name = selected.split()[1]
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)
 
-
-# 你可以選單一個日期（會回傳日期事件）
-st.write("請點擊下方月曆選擇起始日期")
-start_event = calendar(
-    locale='zh-tw',  # 設定為繁體中文
+# -- 用 streamlit-calendar 當作日期選擇器 --
+st.write("請點擊下方月曆選擇【起始日期】")
+start_result = calendar(
+    events=[],  # 沒有事件
     options={
+        "locale": "zh-tw",
         "initialView": "dayGridMonth",
         "headerToolbar": {
             "left": "prev,next today",
@@ -47,10 +48,11 @@ start_event = calendar(
     key="start_calendar"
 )
 
-st.write("請點擊下方月曆選擇結束日期")
-end_event = calendar(
-    locale='zh-tw',  # 設定為繁體中文
+st.write("請點擊下方月曆選擇【結束日期】")
+end_result = calendar(
+    events=[],  # 沒有事件
     options={
+        "locale": "zh-tw",
         "initialView": "dayGridMonth",
         "headerToolbar": {
             "left": "prev,next today",
@@ -61,21 +63,22 @@ end_event = calendar(
     key="end_calendar"
 )
 
-# 取得使用者選擇的日期（點擊事件的日期）
+# 取得日期
 start_date = None
 end_date = None
-
-if start_event and "start" in start_event:
-    start_date = datetime.strptime(start_event["start"], "%Y-%m-%d")
+if start_result and "dateClick" in start_result:
+    start_date = datetime.strptime(start_result["dateClick"]["dateStr"], "%Y-%m-%d")
     st.success(f"起始日期：{start_date.strftime('%Y-%m-%d')}")
-
-if end_event and "start" in end_event:
-    end_date = datetime.strptime(end_event["start"], "%Y-%m-%d")
+if end_result and "dateClick" in end_result:
+    end_date = datetime.strptime(end_result["dateClick"]["dateStr"], "%Y-%m-%d")
     st.success(f"結束日期：{end_date.strftime('%Y-%m-%d')}")
-
 
 # 按下按鈕才執行
 if st.button("產生報表"):
+    if not (start_date and end_date):
+        st.error("請先選擇起始與結束日期！")
+        st.stop()
+    # 以下你的資料處理與產生 Excel 的程式不變
     start_date = datetime.combine(start_date, datetime.min.time())
     end_date = datetime.combine(end_date, datetime.min.time())
 
@@ -283,7 +286,7 @@ if st.button("產生報表"):
             d.alignment = Alignment(horizontal="center")
 
             v = ws.cell(row=row_index, column=col+5, value=row["成交符"])
-            v.font = Font(color=row["符色"], size=10)  # 方形空心、可調大小
+            v.font = Font(color=row["符色"], size=10)
             v.alignment = Alignment(horizontal="center")
             row_index += 1
 

@@ -48,9 +48,10 @@ selected_index = st.selectbox(
     format_func=lambda i: display_options[i]
 )
 stock_id, stock_name, stock_type, stock_date = stock_options[selected_index]
+st.success(
+    f"📈 你已選擇：**{stock_name}**（{stock_id}），市場別：**{stock_type}**，上市日：{stock_date}"
+)
 
-# 4. 正確地由 index 取 tuple 拆解
-stock_id, stock_name, stock_type, stock_date = stock_options[selected_index]
 # 年月日下拉式選單
 years = list(range(2001, 2036))
 months = list(range(1, 13))

@@ -21,9 +21,17 @@ def get_stock_info():
 
 stock_info_df = get_stock_info()
 stock_options = [
-    f"{row['type']:<3}   {row['stock_id']:>6}   {row['stock_name']:<8}   {row['date']}"
+    (row['stock_id'], row['stock_name'], row['type'], row['date'])
     for _, row in stock_info_df.iterrows()
 ]
+display_options = [
+    f"{row[2]:<3}   {row[0]:>6}   {row[1]:<8}   {row[3]}"
+    for row in stock_options
+]
+
+selected_index = st.selectbox("選擇股票代碼", range(len(stock_options)), format_func=lambda i: display_options[i])
+
+stock_id, stock_name, stock_type, stock_date = stock_options[selected_index]
 
 st.title("蘇大哥專用工具")
 
@@ -37,11 +45,6 @@ selected = st.selectbox("選擇股票代碼", stock_options)
 if not selected:
     st.warning("⚠️ 尚未選擇股票")
     st.stop()
-
-stock_id = selected.split()[0]
-stock_name = selected.split()[1]
-
-stock_type = stock_info_df[stock_info_df["stock_id"] == stock_id].iloc[0]["type"]
 
 min_day = datetime(2015, 1, 1)
 max_day = datetime(2035, 12, 31)

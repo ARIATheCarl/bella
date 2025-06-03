@@ -3,3 +3,4 @@ twstock
 pandas
 openpyxl
 lxml
+streamlit-calendar

@@ -21,7 +21,7 @@ def get_stock_info():
 
 stock_info_df = get_stock_info()
 stock_options = [
-    f"{{row['type']:<3}   row['stock_id']:>6}   {row['stock_name']:<8}   {row['date']}"
+    f"{row['type']:<3}   {row['stock_id']:>6}   {row['stock_name']:<8}   {row['date']}"
     for _, row in stock_info_df.iterrows()
 ]
 

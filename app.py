@@ -32,6 +32,10 @@ stock_options = [
 st.title("蘇大哥專用工具")
 
 interval = st.radio("選擇統計區間", ["日", "週", "月"], horizontal=True)
+selected = st.selectbox("選擇股票代碼", stock_options)
+stock_id = selected.split()[0]
+stock_name = selected.split()[1]
+
 # 顯示股票類型（上市／上櫃／興櫃）
 stock_type = get_stock_type(stock_id)
 st.info(f"📄 目前選取股票：{stock_name}（{stock_id}），市場別：**{stock_type}**")

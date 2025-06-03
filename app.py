@@ -83,14 +83,26 @@ def get_stock_type(stock_id: str) -> str:
 # ====== FinMind 取資料，回傳和 twstock 類似的物件list ======
 def fetch_finmind_data(stock_id: str, start: str, end: str) -> list:
     api = DataLoader()
-    api.login_by_token(api_token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNS0wNi0wMyAxMDozMzoxNSIsInVzZXJfaWQiOiJjYXJsNzk5MSIsImlwIjoiNDkuMjE0LjAuMTQxIn0.Qzdlv5fe2J3rRUCpAYDltguY_oGgLlqp7kwILmnTVdA")  # <<<<<< 填入你的 token
+    api.login_by_token(api_token="你的FinMind API Token")  # <<<<<< 填入你的 token
     df = api.taiwan_stock_daily(
         stock_id=stock_id,
         start_date=start,
         end_date=end,
     )
+    if df.empty:
+        st.error(f"FinMind 查不到 {stock_id} 的資料，請檢查代碼或日期。")
+        st.stop()
     df["date"] = pd.to_datetime(df["date"])
-    # 回傳格式統一
+    # 自動偵測最大/最小價欄位名稱
+    if "max_price" in df.columns:
+        high_col = "max_price"
+        low_col = "min_price"
+    elif "max" in df.columns:
+        high_col = "max"
+        low_col = "min"
+    else:
+        st.error(f"FinMind回傳資料找不到max_price/max欄位，欄位有：{df.columns}")
+        st.stop()
     class StockData:
         def __init__(self, date, high, low, capacity):
             self.date = date
@@ -98,7 +110,7 @@ def fetch_finmind_data(stock_id: str, start: str, end: str) -> list:
             self.low = low
             self.capacity = capacity
     return [
-        StockData(row["date"], row["max_price"], row["min_price"], row["Trading_Volume"])
+        StockData(row["date"], row[high_col], row[low_col], row["Trading_Volume"])
         for _, row in df.iterrows()
     ]
 

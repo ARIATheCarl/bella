@@ -20,6 +20,13 @@ def get_stock_info():
     return api.taiwan_stock_info()
 
 stock_info_df = get_stock_info()
+type_mapping = {
+    "twse": "上市",
+    "otc": "上櫃",
+    "rotc": "興櫃",
+    "ETF": "ETF"
+}
+stock_info_df["type"] = stock_info_df["type"].map(type_mapping).fillna(stock_info_df["type"])
 
 # 股票選單: 只保留有上市/上櫃/興櫃型態的股票，顯示「股票代碼 股票名稱」
 stock_info_df = stock_info_df[stock_info_df['type'].isin(['上市', '上櫃', '興櫃'])]

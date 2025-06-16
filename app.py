@@ -231,30 +231,6 @@ if st.button("產生報表"):
             "最低價": "min",
             "成交量": "sum"
         }).reset_index(drop=True)
-        
-    # --- 加入區間極值標記 ---
-    agg_df["是否最高點"] = False
-    agg_df["是否最低點"] = False
-    
-    if interval == "日":
-        df["週"] = df["日期"].apply(lambda x: x.isocalendar()[1])
-        df["年"] = df["日期"].apply(lambda x: x.isocalendar()[0])
-        groups = df.groupby(["年", "週"])
-    elif interval == "週":
-        df["月"] = df["日期"].dt.month
-        df["年"] = df["日期"].dt.year
-        groups = df.groupby(["年", "月"])
-    else:
-        df["年"] = df["日期"].dt.year
-        groups = df.groupby("年")
-    
-    for name, group in groups:
-        max_high = group["最高價"].max()
-        min_low = group["最低價"].min()
-        max_date = group[group["最高價"] == max_high]["日期"].iloc[0]
-        min_date = group[group["最低價"] == min_low]["日期"].iloc[0]
-        agg_df.loc[agg_df["日期"] == max_date, "是否最高點"] = True
-        agg_df.loc[agg_df["日期"] == min_date, "是否最低點"] = True
 
     # 顏色計算
     agg_df["差色"] = ""
@@ -354,21 +330,12 @@ if st.button("產生報表"):
                 prev_year = dt.year
                 ws.merge_cells(start_row=row_index, start_column=col, end_row=row_index, end_column=col+1)
                 ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
-                
             h = ws.cell(row=row_index, column=col+2, value=row["最高價"])
-            if row.get("是否最高點", False):
-                h.font = Font(color=row["高色"], bold=True, underline="single")
-            else:
-                h.font = Font(color=row["高色"])
-
+            h.font = Font(color=row["高色"])
             h.alignment = Alignment(horizontal="center")
 
             l = ws.cell(row=row_index, column=col+3, value=row["最低價"])
-            if row.get("是否最低點", False):
-                l.font = Font(color=row["低色"], bold=True, underline="single")
-            else:
-                l.font = Font(color=row["低色"])
-
+            l.font = Font(color=row["低色"])
             l.alignment = Alignment(horizontal="center")
 
             d_value = round(row["最高價"] - row["最低價"], 2)

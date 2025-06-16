@@ -232,7 +232,7 @@ if st.button("產生報表"):
             "成交量": "sum"
         }).reset_index(drop=True)
         
-    # --- 加入區間極值標記 ---
+    # 加上是否為極值欄位（修正週與月的分組）
     agg_df["是否最高點"] = False
     agg_df["是否最低點"] = False
     
@@ -241,12 +241,12 @@ if st.button("產生報表"):
         df["年"] = df["日期"].apply(lambda x: x.isocalendar()[0])
         groups = df.groupby(["年", "週"])
     elif interval == "週":
-        df["月"] = df["日期"].dt.month
-        df["年"] = df["日期"].dt.year
-        groups = df.groupby(["年", "月"])
-    else:
-        df["年"] = df["日期"].dt.year
-        groups = df.groupby("年")
+        agg_df["年"] = agg_df["日期"].dt.year
+        agg_df["月"] = agg_df["日期"].dt.month
+        groups = agg_df.groupby(["年", "月"])
+    else:  # 月
+        agg_df["年"] = agg_df["日期"].dt.year
+        groups = agg_df.groupby("年")
     
     for name, group in groups:
         max_high = group["最高價"].max()
@@ -255,6 +255,7 @@ if st.button("產生報表"):
         min_date = group[group["最低價"] == min_low]["日期"].iloc[0]
         agg_df.loc[agg_df["日期"] == max_date, "是否最高點"] = True
         agg_df.loc[agg_df["日期"] == min_date, "是否最低點"] = True
+
 
     # 顏色計算
     agg_df["差色"] = ""

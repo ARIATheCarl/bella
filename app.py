@@ -10,6 +10,8 @@ from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperti
 import math
 import calendar
 from FinMind.data import DataLoader
+# 將極值標記改為紅色／藍色邊框樣式
+from openpyxl.styles import Border, Side
 
 st.set_page_config(page_title="蘇文政股期分析專用工具", layout="centered")
 
@@ -355,21 +357,32 @@ if st.button("產生報表"):
                 prev_year = dt.year
                 ws.merge_cells(start_row=row_index, start_column=col, end_row=row_index, end_column=col+1)
                 ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
-                
+
+            # 定義邊框樣式
+            red_border = Border(outline=True, left=Side(style="thin", color="FF0000"),
+                                right=Side(style="thin", color="FF0000"),
+                                top=Side(style="thin", color="FF0000"),
+                                bottom=Side(style="thin", color="FF0000"))
+            blue_border = Border(outline=True, left=Side(style="thin", color="0000FF"),
+                                 right=Side(style="thin", color="0000FF"),
+                                 top=Side(style="thin", color="0000FF"),
+                                 bottom=Side(style="thin", color="0000FF"))
+
+            # 修改寫入 Excel 的最高價與最低價欄位樣式：
             h = ws.cell(row=row_index, column=col+2, value=row["最高價"])
             if row.get("是否最高點", False):
-                h.font = Font(color=row["高色"], bold=True, underline="single")
+                h.font = Font(color=row["高色"], bold=True)
+                h.border = red_border
             else:
                 h.font = Font(color=row["高色"])
-
             h.alignment = Alignment(horizontal="center")
-
+            
             l = ws.cell(row=row_index, column=col+3, value=row["最低價"])
             if row.get("是否最低點", False):
-                l.font = Font(color=row["低色"], bold=True, underline="single")
+                l.font = Font(color=row["低色"], bold=True)
+                l.border = blue_border
             else:
                 l.font = Font(color=row["低色"])
-
             l.alignment = Alignment(horizontal="center")
 
             d_value = round(row["最高價"] - row["最低價"], 2)

@@ -405,7 +405,7 @@ if st.button("產生報表"):
         for i in range(8, ws.max_column + 1):
             ws.column_dimensions[get_column_letter(i)].width = ws.column_dimensions[get_column_letter(i-7)].width
 
-    ws.freeze_panes = "A4"
+    ws.freeze_panes = "A3"
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 1
     ws.page_setup.scale = None

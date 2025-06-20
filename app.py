@@ -253,8 +253,10 @@ if st.button("產生報表"):
     for name, group in groups:
         max_high = group["最高價"].max()
         min_low = group["最低價"].min()
-        max_date = group[group["最高價"] == max_high]["日期"].iloc[0]
-        min_date = group[group["最低價"] == min_low]["日期"].iloc[0]
+        # 最高價第一個
+        max_date = group[group["最高價"] == max_high].sort_values("日期").iloc[0]["日期"]
+        # 最低價最後一個
+        min_date = group[group["最低價"] == min_low].sort_values("日期").iloc[-1]["日期"]
         agg_df.loc[agg_df["日期"] == max_date, "是否最高點"] = True
         agg_df.loc[agg_df["日期"] == min_date, "是否最低點"] = True
 
@@ -359,14 +361,14 @@ if st.button("產生報表"):
                 ws.cell(row=row_index, column=col, value=day_str).alignment = Alignment(horizontal="center")
 
             # 定義邊框樣式
-            red_border = Border(outline=True, left=Side(style="thin", color="FF0000"),
-                                right=Side(style="thin", color="FF0000"),
-                                top=Side(style="thin", color="FF0000"),
-                                bottom=Side(style="thin", color="FF0000"))
-            blue_border = Border(outline=True, left=Side(style="thin", color="0000FF"),
-                                 right=Side(style="thin", color="0000FF"),
-                                 top=Side(style="thin", color="0000FF"),
-                                 bottom=Side(style="thin", color="0000FF"))
+            red_border = Border(outline=True, left=Side(style="thin", color="009A72"),
+                                right=Side(style="thin", color="009A72"),
+                                top=Side(style="thin", color="009A72"),
+                                bottom=Side(style="thin", color="009A72"))
+            blue_border = Border(outline=True, left=Side(style="thin", color="009A72"),
+                                 right=Side(style="thin", color="009A72"),
+                                 top=Side(style="thin", color="009A72"),
+                                 bottom=Side(style="thin", color="009A72"))
 
             # 修改寫入 Excel 的最高價與最低價欄位樣式：
             h = ws.cell(row=row_index, column=col+2, value=row["最高價"])
@@ -403,7 +405,7 @@ if st.button("產生報表"):
         for i in range(8, ws.max_column + 1):
             ws.column_dimensions[get_column_letter(i)].width = ws.column_dimensions[get_column_letter(i-7)].width
 
-    ws.freeze_panes = "A3"
+    ws.freeze_panes = "A4"
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 1
     ws.page_setup.scale = None

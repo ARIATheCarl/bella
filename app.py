@@ -401,7 +401,7 @@ if st.button("產生報表"):
         for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
             col_letter = get_column_letter(col_cells[0].column)
             max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)
-            ws.column_dimensions[col_letter].width = max(2, min(max_len + 2, 16))
+            ws.column_dimensions[col_letter].width = max(2, min(max_len + 2, 15))
         for i in range(8, ws.max_column + 1):
             ws.column_dimensions[get_column_letter(i)].width = ws.column_dimensions[get_column_letter(i-7)].width
 

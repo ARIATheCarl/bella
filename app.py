@@ -289,7 +289,7 @@ if st.button("產生報表"):
         agg_df.loc[i, "差色"] = "FFCC3333" if diff >= cmp_diff else "FF3366CC"
 
     # 分頁
-    chunk_size = 43
+    chunk_size = 40
     chunks = []
     for i in range(0, len(agg_df), chunk_size):
         chunks.append(agg_df.iloc[i:i+chunk_size].reset_index(drop=True))

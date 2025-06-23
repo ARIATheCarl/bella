@@ -314,7 +314,7 @@ if st.button("產生報表"):
             sheet_count = block // blocks_per_sheet
             ws = wb.active if block == 0 else wb.create_sheet(title=f"{interval}報表{sheet_count+1}")
 
-            ws.freeze_panes = "A3"
+            ws.freeze_panes = "A4"
             ws.page_setup.fitToWidth = 1
             ws.page_setup.fitToHeight = 1
             ws.page_setup.scale = None

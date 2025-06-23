@@ -289,7 +289,7 @@ if st.button("產生報表"):
         agg_df.loc[i, "差色"] = "FFCC3333" if diff >= cmp_diff else "FF3366CC"
 
     # 分頁
-    chunk_size = 40
+    chunk_size = 43
     chunks = []
     for i in range(0, len(agg_df), chunk_size):
         chunks.append(agg_df.iloc[i:i+chunk_size].reset_index(drop=True))
@@ -313,6 +313,22 @@ if st.button("產生報表"):
         if block % blocks_per_sheet == 0:
             sheet_count = block // blocks_per_sheet
             ws = wb.active if block == 0 else wb.create_sheet(title=f"{interval}報表{sheet_count+1}")
+
+            ws.freeze_panes = "A3"
+            ws.page_setup.fitToWidth = 1
+            ws.page_setup.fitToHeight = 1
+            ws.page_setup.scale = None
+            ws.page_setup.orientation = "portrait"
+            ws.page_setup.paperSize = 11
+            ws.sheet_properties = WorksheetProperties(pageSetUpPr=PageSetupProperties(fitToPage=True))
+            ws.page_setup.horizontalCentered = True
+            ws.page_setup.verticalCentered = True
+            ws.page_margins = PageMargins(
+                left=0.1, right=0.1,
+                top=0.1, bottom=0.1,
+                header=0.0, footer=0.0
+            )
+    
             ws.insert_rows(1)
             ws.insert_rows(2)
             ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=20)
@@ -401,24 +417,10 @@ if st.button("產生報表"):
         for col_cells in ws.iter_cols(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
             col_letter = get_column_letter(col_cells[0].column)
             max_len = max(len(str(c.value)) if c.value else 0 for c in col_cells)
-            ws.column_dimensions[col_letter].width = max(2, min(max_len + 1, 12))
+            ws.column_dimensions[col_letter].width = max(2, min(max_len + 2, 14))
         for i in range(8, ws.max_column + 1):
             ws.column_dimensions[get_column_letter(i)].width = ws.column_dimensions[get_column_letter(i-7)].width
 
-    ws.freeze_panes = "A4"
-    ws.page_setup.fitToWidth = 1
-    ws.page_setup.fitToHeight = 1
-    ws.page_setup.scale = None
-    ws.page_setup.orientation = "portrait"
-    ws.page_setup.paperSize = 11
-    ws.sheet_properties = WorksheetProperties(pageSetUpPr=PageSetupProperties(fitToPage=True))
-    ws.page_setup.horizontalCentered = True
-    ws.page_setup.verticalCentered = True
-    ws.page_margins = PageMargins(
-        left=0.1, right=0.1,
-        top=0.1, bottom=0.1,
-        header=0.0, footer=0.0
-    )
 
     buffer = BytesIO()
     wb.save(buffer)
